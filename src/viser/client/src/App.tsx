@@ -10,6 +10,7 @@ import { PerformanceMonitor, Stats } from "@react-three/drei";
 import { HDRJPGEnvironment } from "./HDRJPGEnvironment";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { XR, createXRStore } from "@react-three/xr";
 import React, { useEffect, useMemo } from "react";
 import { ViewerMutable } from "./ViewerContext";
 import { InteractionController } from "./pointer/interactionController";
@@ -89,6 +90,9 @@ const hdriPresets: Record<string, string> = {
   sunset: hdriSunset,
   warehouse: hdriWarehouse,
 };
+
+// One XR session for the app's one 3D canvas.
+const xrStore = createXRStore();
 
 // ======= Utility functions =======
 
@@ -659,7 +663,7 @@ function ViewerCanvas({ children }: { children: React.ReactNode }) {
   const fixedDpr = viewer.useDevSettings((state) => state.fixedDpr);
   const sceneContents = React.useMemo(
     () => (
-      <>
+      <XR store={xrStore}>
         <BackgroundImage />
         <SceneContextSetter />
         {memoizedCameraControls}
@@ -674,7 +678,7 @@ function ViewerCanvas({ children }: { children: React.ReactNode }) {
         </SplatRenderContext>
         <DefaultLights />
         <SceneFog />
-      </>
+      </XR>
     ),
     [children, memoizedCameraControls],
   );
@@ -683,6 +687,17 @@ function ViewerCanvas({ children }: { children: React.ReactNode }) {
       ref={inViewRef}
       style={{ position: "relative", zIndex: 0, width: "100%", height: "100%" }}
     >
+      <button
+        onClick={() => xrStore.enterVR()}
+        style={{
+          position: "absolute",
+          top: "1em",
+          right: "1em",
+          zIndex: 1,
+        }}
+      >
+        Enter VR
+      </button>
       <Canvas
         gl={{ preserveDrawingBuffer: true, reversedDepthBuffer: true }}
         // `touchAction: none` opts the canvas out of native touch actions.
