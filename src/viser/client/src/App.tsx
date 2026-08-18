@@ -660,6 +660,26 @@ function ViewerCanvas({ children }: { children: React.ReactNode }) {
     interaction.cameraLocks.apply();
   };
 
+  // Feature-detect WebXR "immersive-vr" support so the Enter VR button stays
+  // hidden on browsers/devices that can't use it (default: hidden, until the
+  // async check resolves true -- avoids flashing the button then hiding it).
+  const [vrSupported, setVrSupported] = React.useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    if (navigator.xr?.isSessionSupported === undefined) return;
+    navigator.xr
+      .isSessionSupported("immersive-vr")
+      .then((supported) => {
+        if (!cancelled) setVrSupported(supported);
+      })
+      .catch(() => {
+        if (!cancelled) setVrSupported(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const fixedDpr = viewer.useDevSettings((state) => state.fixedDpr);
   const sceneContents = React.useMemo(
     () => (
@@ -687,17 +707,23 @@ function ViewerCanvas({ children }: { children: React.ReactNode }) {
       ref={inViewRef}
       style={{ position: "relative", zIndex: 0, width: "100%", height: "100%" }}
     >
-      <button
-        onClick={() => xrStore.enterVR()}
-        style={{
-          position: "absolute",
-          top: "1em",
-          right: "1em",
-          zIndex: 1,
-        }}
-      >
-        Enter VR
-      </button>
+      {vrSupported && (
+        <button
+          onClick={() => {
+            xrStore.enterVR().catch((error: unknown) => {
+              console.warn("Failed to enter VR session:", error);
+            });
+          }}
+          style={{
+            position: "absolute",
+            top: "1em",
+            right: "1em",
+            zIndex: 1,
+          }}
+        >
+          Enter VR
+        </button>
+      )}
       <Canvas
         gl={{ preserveDrawingBuffer: true, reversedDepthBuffer: true }}
         // `touchAction: none` opts the canvas out of native touch actions.
