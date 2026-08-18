@@ -15,7 +15,11 @@ htmlcov
 .envrc
 .vite
 build
-src/viser/client/build
+# A git-source install of viser (no PyPI wheel) ships no prebuilt client
+# unless it's committed here, so unignore just the built client output
+# (not node_modules, not other "build" dirs matched by the pattern above).
+!src/viser/client/build
+!src/viser/client/build/**
 src/viser/client/.nodeenv
 examples/assets
 
